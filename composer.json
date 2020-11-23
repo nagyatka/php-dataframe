@@ -1,0 +1,25 @@
+{
+    "name": "nagyatka/php-dataframe",
+    "type": "library",
+    "description": "php library for table editing",
+    "authors": [
+        {
+            "name": "Attila Nagy",
+            "email": "attila.nagy@ilx.hu",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "PHPDataFrame": "src/"
+        }
+    },
+    "require": {
+        "php": "^7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "7.4.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
