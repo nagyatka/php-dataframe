@@ -5,7 +5,9 @@ namespace PHPDataFrame;
 
 
 
+use ArrayAccess;
 use InvalidArgumentException;
+use Iterator;
 use PHPDataFrame\Exception\UnsupportedOperationException;
 
 /**
@@ -45,12 +47,13 @@ function is_cols_str($str) {
  * @return string
  */
 function truncate($string, $length, $dots = "...") {
-    return (strlen($string) > $length) ? substr($string, 0, $length - strlen($dots)) . $dots : $string;
+    return (strlen($string) > $length) ? substr($string, 0, $length - strlen($dots)) . $dots : str_pad($string, $length);
 }
 
 
+// TODO: Add iterators (itterows, itercols)
 
-class DataFrame implements \ArrayAccess
+class DataFrame implements ArrayAccess, Iterator
 {
     /**
      * @var array
@@ -71,6 +74,11 @@ class DataFrame implements \ArrayAccess
      * @var array
      */
     private $indices;
+
+    /**
+     * @var int
+     */
+    private $cursor = 0;
 
     /**
      * PHPDataFrame constructor.
@@ -248,15 +256,83 @@ class DataFrame implements \ArrayAccess
 
     public function __toString()
     {
-        // TODO: finish print (basic version)
-        // TODO: Add iterators (Iterator interface, itterows, itercols)
-        $min_length = 6;
-        $max_length = 10;
-        $length = max(array_map(function($x)use($min_length){max($min_length, strlen($x));}, $this->columns));
         $result_str = "\n";
 
-        $header_str = "|";
+        # Determining length of one header element
+        $min_length = 6;
+        $max_length = 10;
+        $length = max(max(array_map(function($x)use($min_length){max($min_length, strlen($x));}, $this->columns)), $max_length);
+        $index_len = $length / 2;
+
+        # Assembling header
+        $header_str = str_repeat(" ", $index_len)."|".implode("|", array_map(function($x)use($length) {
+            return truncate(strval($x), $length);}, $this->columns)) . "|\n";
+        $result_str .= $header_str . str_repeat("=", strlen($header_str) - 1) . "\n";
+
+        # Assembling data rows
+        $vals = array_values($this->values);
+        for($i = 0; $i < count($this->indices); $i++) {
+            $result_str .= truncate(strval($this->indices[$i]), $index_len)."|".implode("|", array_map(function ($x) use($length) {
+                return truncate(strval($x), $length);
+            }, $vals[$i]))."|\n";
+        }
 
         return $result_str;
+    }
+
+    /**
+     * Return the current element
+     * @link https://php.net/manual/en/iterator.current.php
+     * @return mixed Can return any type.
+     * @since 5.0.0
+     */
+    public function current()
+    {
+        return Series::fromRow($this->values[$this->cursor], $this->indices[$this->cursor], $this->columns);
+    }
+
+    /**
+     * Move forward to next element
+     * @link https://php.net/manual/en/iterator.next.php
+     * @return void Any returned value is ignored.
+     * @since 5.0.0
+     */
+    public function next()
+    {
+        ++$this->cursor;
+    }
+
+    /**
+     * Return the key of the current element
+     * @link https://php.net/manual/en/iterator.key.php
+     * @return mixed scalar on success, or null on failure.
+     * @since 5.0.0
+     */
+    public function key()
+    {
+        return $this->indices[$this->cursor];
+    }
+
+    /**
+     * Checks if current position is valid
+     * @link https://php.net/manual/en/iterator.valid.php
+     * @return boolean The return value will be casted to boolean and then evaluated.
+     * Returns true on success or false on failure.
+     * @since 5.0.0
+     */
+    public function valid()
+    {
+        return $this->cursor >= 0 && $this->cursor < count($this->values);
+    }
+
+    /**
+     * Rewind the Iterator to the first element
+     * @link https://php.net/manual/en/iterator.rewind.php
+     * @return void Any returned value is ignored.
+     * @since 5.0.0
+     */
+    public function rewind()
+    {
+        $this->cursor = 0;
     }
 }

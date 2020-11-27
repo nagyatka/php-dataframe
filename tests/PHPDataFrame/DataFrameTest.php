@@ -15,8 +15,9 @@ class DataFrameTest extends TestCase
             ["a" => "d", "b" => "e"],
         ]);
 
+        print($df);
+
         $sub_df = $df[cols(["a", "b"])];
 
-        print_r($sub_df);
     }
 }
