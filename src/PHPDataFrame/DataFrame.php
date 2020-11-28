@@ -51,8 +51,6 @@ function truncate($string, $length, $dots = "...") {
 }
 
 
-// TODO: Add iterators (itterows, itercols)
-
 class DataFrame implements ArrayAccess, Iterator
 {
     /**
@@ -63,12 +61,17 @@ class DataFrame implements ArrayAccess, Iterator
     /**
      * @var array
      */
-    public $columns;
+    public $shape;
+
+    /**
+     * @var IndexLocation
+     */
+    public $iloc;
 
     /**
      * @var array
      */
-    public $shape;
+    private $columns;
 
     /**
      * @var array
@@ -89,12 +92,25 @@ class DataFrame implements ArrayAccess, Iterator
      */
     public function __construct(array $values, array $columns=null, array $indices=null)
     {
+        // Type checks
+        if((count($values) < 1 || $values == null) && $columns == null && $indices == null) {
+            throw new InvalidArgumentException("At least columns or indices must be set if the values is empty.");
+        }
+        if($columns != null && !is_array($columns)) {
+            throw new InvalidArgumentException("The columns must be array of column name strings.");
+        }
+        if($indices != null && !is_array($indices)) {
+            throw new InvalidArgumentException("The indices must be array of index values.");
+        }
+
+        if($values == null) {
+            $values = [];
+        }
         if($indices == null) {
             $indices = array_keys($values);
         }
-        else {
-            $values = array_values($values);
-        }
+        $values = array_values($values);
+
 
         if($columns == null) {
             $idx = array_keys($indices)[0];
@@ -110,9 +126,13 @@ class DataFrame implements ArrayAccess, Iterator
         $this->values = $values;
         $this->columns = $columns;
         $this->indices = $indices;
-        $this->shape = [count($columns), count($indices)];
+        $this->shape = [count($indices), count($columns)];
+        $this->iloc = new IndexLocation($this);
     }
 
+    private function updateIloc() {
+        $this->iloc = new IndexLocation($this);
+    }
 
     /**
      * Whether a offset exists
@@ -226,7 +246,7 @@ class DataFrame implements ArrayAccess, Iterator
      * @return Series
      */
     public function getColumn($column_name) {
-        return new Series(array_column($this->values, $column_name));
+        return Series::fromColumn(array_column($this->values, $column_name), $column_name, $this->indices);
     }
 
     /**
@@ -253,7 +273,41 @@ class DataFrame implements ArrayAccess, Iterator
         return new DataFrame($values, $column_names, $this->indices);
     }
 
+    /**
+     * @return array
+     */
+    public function getIndices(): array
+    {
+        return $this->indices;
+    }
 
+    /**
+     * Returns with the column names' array.
+     *
+     * @return array
+     */
+    public function getColumnNames() {
+        return $this->columns;
+    }
+
+    /**
+     *
+     *
+     * @param array $columns
+     */
+    public function setColumnNames(array $columns): void
+    {
+        if(count($columns) != count($this->columns)) {
+            throw new InvalidArgumentException("Length of column names array is worng. ". count($columns).
+                "!=".count($this->columns));
+        }
+        $this->columns = $columns;
+        $this->updateIloc();
+    }
+
+    /**
+     * @return string
+     */
     public function __toString()
     {
         $result_str = "\n";
@@ -277,6 +331,7 @@ class DataFrame implements ArrayAccess, Iterator
             }, $vals[$i]))."|\n";
         }
 
+        $result_str .= "Shape: " . $this->shape[0] . "x" . $this->shape[1] . "\n";
         return $result_str;
     }
 
@@ -334,5 +389,23 @@ class DataFrame implements ArrayAccess, Iterator
     public function rewind()
     {
         $this->cursor = 0;
+    }
+
+    /**
+     * Yields a {row index => row values: Series} generator.
+     */
+    public function iterrows() {
+        for($i = 0; $i < count($this->values); $i++) {
+            yield $this->indices[$i] => Series::fromRow($this->values[$i], $this->indices[$i], $this->columns);
+        }
+    }
+
+    /**
+     * Yields a {column name => column values: Series} generator.
+     */
+    public function itercols() {
+        for($i = 0; $i < count($this->values); $i++) {
+            yield $this->columns[$i] => $this->getColumn($this->columns[$i]);
+        }
     }
 }
