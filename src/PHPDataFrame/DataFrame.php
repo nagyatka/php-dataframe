@@ -93,22 +93,26 @@ class DataFrame implements ArrayAccess, Iterator
     public function __construct(array $values, array $columns=null, array $indices=null)
     {
         // Type checks
-        if((count($values) < 1 || $values == null) && $columns == null && $indices == null) {
-            throw new InvalidArgumentException("At least columns or indices must be set if the values is empty.");
+        if((count($values) < 1 || $values == null) && $columns == null) {
+            throw new InvalidArgumentException("At least columns must be set if the values is empty.");
         }
-        if($columns != null && !is_array($columns)) {
-            throw new InvalidArgumentException("The columns must be array of column name strings.");
+        if($columns != null && !(Util::isIntArray($columns) || Util::isStringArray($columns))) {
+            throw new InvalidArgumentException("The columns must be array of column name strings or integers.");
         }
-        if($indices != null && !is_array($indices)) {
-            throw new InvalidArgumentException("The indices must be array of index values.");
+        if($indices != null && !(Util::isIntArray($columns) || Util::isStringArray($columns))) {
+            throw new InvalidArgumentException("The indices must be array of strings or integers.");
         }
 
+        // If values empty, it will be initiated as an empty array
         if($values == null) {
             $values = [];
         }
+
+        // Empty indices means that, the indices come from the input $values.
         if($indices == null) {
             $indices = array_keys($values);
         }
+
         $values = array_values($values);
 
 
@@ -121,6 +125,7 @@ class DataFrame implements ArrayAccess, Iterator
             foreach ($values as $row) {
                 $new_values[] = array_combine($columns, $row);
             }
+            $values = $new_values;
         }
 
         $this->values = $values;

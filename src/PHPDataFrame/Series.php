@@ -83,7 +83,6 @@ class Series implements ArrayAccess, Iterator
             throw new InvalidArgumentException("Length of data and indices does not match: ".
                 count($data) ."!=". count($indices));
         }
-
         if(!in_array($axis, [Series::ROW_DATA, Series::COLUMN_DATA])) {
             throw new InvalidArgumentException("Axis must be 0 or 1.");
         }
@@ -131,17 +130,17 @@ class Series implements ArrayAccess, Iterator
     }
 
     public static function fromColumn(array $data, $column_name, $indices) {
-        return new Series(array_values($data), [$column_name], $indices, Series::COLUMN_DATA);
+        return new Series(array_values($data), Series::COLUMN_DATA, [$column_name], $indices);
     }
 
     public static function fromRow(array $data, $index, $columns) {
-        return new Series(array_values($data), $columns, [$index], Series::ROW_DATA);
+        return new Series(array_values($data), Series::ROW_DATA, $columns, [$index]);
     }
 
     private static function  __getDataStr($keys, $data) {
         $len = count($data);
         $data_elements = [];
-        for ($i = 0; $i < Series::PRINT_MAX_LEN; ++$i) {
+        for ($i = 0; $i < min(Series::PRINT_MAX_LEN, $len); ++$i) {
             $data_elements[] = "\t" . $keys[$i] . ": " . $data[$i] . "\n";
         }
 
@@ -157,11 +156,11 @@ class Series implements ArrayAccess, Iterator
         $len = count($this->data);
         if($this->axis == Series::ROW_DATA) {
             $data_str = self::__getDataStr($this->columns, $this->data);
-            return "Series(Name=".$this->columns[0].", Length=".$len."){[\n$data_str]}";
+            return "Series(Index=".$this->indices[0].", Length=".$len."){[\n$data_str]}";
         }
         else {
             $data_str = self::__getDataStr($this->indices, $this->data);
-            return "Series(Index=".$this->indices[0].", length=".$len."){[\n$data_str]}";
+            return "Series(Name=".$this->columns[0].", length=".$len."){[\n$data_str]}";
         }
     }
 
