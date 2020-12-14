@@ -15,6 +15,24 @@ class DataFrameTest extends TestCase
         $df = new DataFrame([]);
     }
 
+    public function testShortIndicesArray() {
+        $this->expectException(InvalidArgumentException::class);
+        $df = new DataFrame([
+            [1,2,3],
+            [4,5,6],
+            [7,8,9]
+        ], ["a", "b", "c"], ["e", "f"]);
+    }
+
+    public function testShortColumnsArray() {
+        $this->expectException(InvalidArgumentException::class);
+        $df = new DataFrame([
+            [1,2,3],
+            [4,5,6],
+            [7,8,9]
+        ], ["a", "b"], ["e", "f", "g"]);
+    }
+
     public function testInitEmptyWithIndices()
     {
         $this->expectException(InvalidArgumentException::class);

@@ -50,7 +50,13 @@ function truncate($string, $length, $dots = "...") {
     return (strlen($string) > $length) ? substr($string, 0, $length - strlen($dots)) . $dots : str_pad($string, $length);
 }
 
-
+/**
+ * TODO list:
+ *  - append rows (update shape)
+ *  - update one value
+ * Class DataFrame
+ * @package PHPDataFrame
+ */
 class DataFrame implements ArrayAccess, Iterator
 {
     /**
@@ -115,6 +121,9 @@ class DataFrame implements ArrayAccess, Iterator
 
         $values = array_values($values);
 
+        if(count($values) > 0 && $columns != null && count($columns) != count($values[0])) {
+            throw new InvalidArgumentException("The length of column array has not the same length as input values: ".count($columns)."!=".count($values[0]));
+        }
 
         if($columns == null) {
             $idx = array_keys($indices)[0];
@@ -126,6 +135,10 @@ class DataFrame implements ArrayAccess, Iterator
                 $new_values[] = array_combine($columns, $row);
             }
             $values = $new_values;
+        }
+
+        if(count($indices) != count($values)) {
+            throw new InvalidArgumentException("The length of index array has not the same length as input values: ".count($indices)."!=".count($values));
         }
 
         $this->values = $values;
@@ -227,6 +240,8 @@ class DataFrame implements ArrayAccess, Iterator
             $this->values[$offset] = $value[$i];
         }
         $this->columns[] = $offset;
+
+        $this->shape = [count($this->indices), count($this->columns)];
     }
 
     /**

@@ -91,23 +91,38 @@ class IndexLocation implements \ArrayAccess
     {
         if(is_inds_str($offset)) {
             $indices = get_inds($offset);
-            if(is_int($indices[0])) {
-                return $this->getRows(array_map(function ($x) {return intval($x);}, $indices));
+            if(is_numeric($indices[0])) {
+                $int_indices = array_map(function ($x) {return intval($x);}, $indices);
+                $labels = $this->df->getIndices();
+                $label_indices = array_map(function ($x) use ($labels) {return $labels[$x];}, $int_indices);
+                return new DataFrame($this->getRows($int_indices), $this->df->getColumnNames(), $label_indices);
             }
             else {
-                return $this->getRows($indices);
+                return new DataFrame( $this->getRows($indices), $this->df->getColumnNames(), $indices);
             }
         }
         elseif (is_int($offset)) {
             $index = intval($offset);
+            if(count($this->df->getIndices()) < $index) {
+                throw new InvalidArgumentException("Unknown index: " . $offset);
+            }
             return Series::fromRow($this->df->values[$index], $index, $this->df->getColumnNames());
         }
         elseif (is_string($offset)) {
-            $idx = array_search($offset, $this->df->getIndices());
-            if($idx == false) {
+            $indices = array_keys($this->df->getIndices(), $offset);
+            if(count($indices) < 1) {
                 throw new InvalidArgumentException("Unknown index: " . $offset);
             }
-            return Series::fromRow($this->df->values[$idx], $offset,  $this->df->getColumnNames());
+            if(count($indices) == 1) {
+                $idx = $indices[0];
+                return Series::fromRow($this->df->values[$idx], $offset,  $this->df->getColumnNames());
+            }
+            else {
+                return new DataFrame(
+                    $this->getRows($indices), $this->df->getColumnNames(),
+                    array_fill(0, count($indices), $offset)
+                );
+            }
         }
         else {
             throw new InvalidArgumentException("Unsupported key type");
@@ -157,7 +172,7 @@ class IndexLocation implements \ArrayAccess
                 $idx = $index;
             }
 
-            if($idx == false) {
+            if($idx === false) {
                 throw new InvalidArgumentException("Unknown index: " . $index);
             }
             $result[] = $this->df->values[$idx];

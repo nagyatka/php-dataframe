@@ -141,14 +141,14 @@ class Series implements ArrayAccess, Iterator
         $len = count($data);
         $data_elements = [];
         for ($i = 0; $i < min(Series::PRINT_MAX_LEN, $len); ++$i) {
-            $data_elements[] = "\t" . $keys[$i] . ": " . $data[$i] . "\n";
+            $data_elements[] = "\t" . $keys[$i] . ": " . $data[$i] . ",\n";
         }
 
         if($len > Series::PRINT_MAX_LEN) {
             $data_elements[] = "...\n";
-            $data_elements [] = "\t" . end($keys) . ": " . end($data) . "\n";
+            $data_elements [] = "\t" . end($keys) . ": " . end($data) . ",\n";
         }
-        return implode(", ", $data_elements);
+        return implode("", $data_elements);
     }
 
     public function __toString()
