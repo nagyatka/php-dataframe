@@ -54,6 +54,8 @@ function truncate($string, $length, $dots = "...") {
  * TODO list:
  *  - append rows (update shape)
  *  - update one value
+ *  - apply method for using arbitrary function
+ *  - getter for name and indices in series
  * Class DataFrame
  * @package PHPDataFrame
  */
