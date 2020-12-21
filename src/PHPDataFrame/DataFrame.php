@@ -52,8 +52,8 @@ function truncate($string, $length, $dots = "...") {
 
 /**
  * TODO list:
+ *  - finish update one value test cases (only the exception handling left)
  *  - append rows (update shape)
- *  - update one value
  *  - apply method for using arbitrary function
  *  - getter for name and indices in series
  * Class DataFrame
@@ -430,4 +430,66 @@ class DataFrame implements ArrayAccess, Iterator
             yield $this->columns[$i] => $this->getColumn($this->columns[$i]);
         }
     }
+
+    /**
+     * Access a single value for a row/column label/index pair. If value parameter is null the function returns the
+     * current value of the selected cell, otherwise the value passed in the parameter will be set at the cell.
+     *
+     * Notes:
+     *  - In case of label duplication, always the first occurrence is used.
+     *  - Numeric strings are treated as labels.
+     *
+     *
+     * @param string|integer $row_id Row label or index
+     * @param string|integer $col_id Column label or index
+     * @param mixed|null $value The value to set.
+     *
+     * @return mixed|null
+     */
+    public function at($row_id, $col_id, $value = null) {
+        if(is_string($row_id)) {
+            $row_idx = array_search($row_id, $this->getIndices());
+            if($row_idx === false) {
+                throw new InvalidArgumentException("Unknown row label: " . $row_id);
+            }
+        }
+        elseif (is_int($row_id)) {
+            if($row_id >= count($this->getIndices())) {
+                throw new InvalidArgumentException("Too big row index: " . $row_id);
+            }
+            $row_idx = $row_id;
+        }
+        else {
+            throw new InvalidArgumentException("Unknown type of row index: " . $row_id);
+        }
+
+        if(is_string($col_id)) {
+            if(!Util::isStringArray($this->getColumnNames())){
+                throw new InvalidArgumentException("DataFrame has integer column ids, string label has given.");
+            }
+
+            if(!in_array($col_id, $this->getColumnNames())) {
+                throw new InvalidArgumentException("Unknown column label: " . $col_id);
+            }
+            $col_idx = $col_id;
+        }
+        elseif (is_int($col_id)) {
+            if($col_id >= count($this->getColumnNames())) {
+                throw new InvalidArgumentException("Too big column index: " . $col_id);
+            }
+            $col_idx = $this->getColumnNames()[$col_id];
+        }
+        else {
+            throw new InvalidArgumentException("Unknown type of column index: " . $col_id);
+        }
+
+        if($value == null) {
+            return $this->values[$row_idx][$col_idx];
+        }
+        else {
+            $this->values[$row_idx][$col_idx] = $value;
+            return null;
+        }
+    }
+
 }
