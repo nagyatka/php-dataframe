@@ -68,4 +68,22 @@ class Util
     public static function isDataFrame($input) {
         return get_class($input) === DataFrame::class;
     }
+
+    /**
+     * Compares the values of the arrays. Returns true, if the two arrays have same element values. Method does not
+     * take into account the ordering of the elements.
+     *
+     * @param array $arr1 Array 1
+     * @param array $arr2 Array 2
+     * @return bool True, if the two input arrays are equals. False, otherwise.
+     */
+    public static function arraysEqual($arr1, $arr2) {
+        $x = array_values($arr1);
+        $y = array_values($arr2);
+
+        sort($x);
+        sort($y);
+
+        return $x === $y;
+    }
 }

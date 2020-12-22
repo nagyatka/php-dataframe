@@ -53,9 +53,9 @@ function truncate($string, $length, $dots = "...") {
 
 /**
  * TODO list:
- *  - append rows (update shape)
+ *  - append rows (required test cases)
+ *  - getter for name and indices in series (required test cases)
  *  - apply method for using arbitrary function
- *  - getter for name and indices in series
  * Class DataFrame
  * @package PHPDataFrame
  */
@@ -148,6 +148,10 @@ class DataFrame implements ArrayAccess, Iterator
         $this->indices = $indices;
         $this->shape = [count($indices), count($columns)];
         $this->iloc = new IndexLocation($this);
+    }
+
+    private function updateShape() {
+        $this->shape = [count($this->indices), count($this->columns)];
     }
 
     private function updateIloc() {
@@ -243,7 +247,7 @@ class DataFrame implements ArrayAccess, Iterator
         }
         $this->columns[] = $offset;
 
-        $this->shape = [count($this->indices), count($this->columns)];
+        $this->updateShape();
     }
 
     /**
@@ -492,4 +496,53 @@ class DataFrame implements ArrayAccess, Iterator
         }
     }
 
+    /**
+     * Appends the input object to the DataFrame. Input object must be a DataFrame or a Series.
+     *
+     * @param DataFrame|Series $other
+     * @param bool $ignore_index
+     */
+    public function append($other, $ignore_index = false) {
+        if(!Util::isDataFrame($other) || !Util::isSeries($other)) {
+            throw new InvalidArgumentException("The input other object must be a DataFrame or a Series");
+        }
+
+        if(Util::isSeries($other)) {
+            /** @var Series $other */
+            $other = new DataFrame($other->getValues(), $other->getIndices(), [$other->getName()]);
+        }
+
+
+        if(!Util::arraysEqual($this->getColumnNames(), $other->getColumnNames())) {
+            throw new InvalidArgumentException("The input other object has different columns.");
+        }
+
+        if($ignore_index) {
+            $this->values = $this->values + $other->values;
+            $this->indices = $this->getIndices() + $other->getIndices();
+            $this->updateShape();
+            $this->updateIloc();
+        }
+        else {
+
+            $same_indices = array_intersect($this->getIndices(), $other->getIndices());
+            foreach ($same_indices as $same_index) {
+                // Replacing for all positions
+                $idx_positions = array_keys($this->getIndices(), $same_index);
+                foreach ($idx_positions as $idx_position) {
+                    $this->values[$idx_position] = $other->iloc[$same_index];
+                }
+            }
+
+            $new_indices = array_diff($other->getIndices(), $this->getIndices());
+            foreach ($new_indices as $new_index) {
+                $this->values[] = $other->iloc[$new_index];
+            }
+
+            $this->indices = $this->getIndices() + $new_indices;
+            $this->updateShape();
+            $this->updateIloc();
+        }
+
+    }
 }

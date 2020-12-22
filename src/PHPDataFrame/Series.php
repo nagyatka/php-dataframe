@@ -115,11 +115,20 @@ class Series implements ArrayAccess, Iterator
         return $this->data[$idx];
     }
 
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     * @throws UnsupportedOperationException
+     */
     public function offsetSet($offset, $value)
     {
        throw new UnsupportedOperationException("Series are immutable objects. Use drop method instead!");
     }
 
+    /**
+     * @param mixed $offset
+     * @throws UnsupportedOperationException
+     */
     public function offsetUnset($offset)
     {
         throw new UnsupportedOperationException("Series are immutable objects. Use drop method instead!");
@@ -168,6 +177,14 @@ class Series implements ArrayAccess, Iterator
         return $this->axis == Series::ROW_DATA ?
             array_combine($this->columns, $this->data):
             array_combine($this->indices, $this->data);
+    }
+
+    public function getIndices() {
+        return $this->axis == Series::ROW_DATA ? $this->columns : $this->indices;
+    }
+
+    public function getName() {
+        return $this->axis == Series::ROW_DATA ? $this->indices[0] : $this->columns[0];
     }
 
     /**
