@@ -9,6 +9,7 @@ use ArrayAccess;
 use InvalidArgumentException;
 use Iterator;
 use PHPDataFrame\Exception\UnsupportedOperationException;
+use function PHPSTORM_META\type;
 
 /**
  * Concatenates column names to a string. It is a helper method to select multiple columns from a Dataframe.
@@ -52,7 +53,6 @@ function truncate($string, $length, $dots = "...") {
 
 /**
  * TODO list:
- *  - finish update one value test cases (only the exception handling left)
  *  - append rows (update shape)
  *  - apply method for using arbitrary function
  *  - getter for name and indices in series
@@ -460,7 +460,7 @@ class DataFrame implements ArrayAccess, Iterator
             $row_idx = $row_id;
         }
         else {
-            throw new InvalidArgumentException("Unknown type of row index: " . $row_id);
+            throw new InvalidArgumentException("Unknown type of row");
         }
 
         if(is_string($col_id)) {
