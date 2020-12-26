@@ -53,7 +53,6 @@ function truncate($string, $length, $dots = "...") {
 
 /**
  * TODO list:
- *  - append rows (required test cases)
  *  - getter for name and indices in series (required test cases)
  *  - apply method for using arbitrary function
  * Class DataFrame
@@ -503,8 +502,11 @@ class DataFrame implements ArrayAccess, Iterator
      * @param bool $ignore_index
      */
     public function append($other, $ignore_index = false) {
-        if(!Util::isDataFrame($other) || !Util::isSeries($other)) {
-            throw new InvalidArgumentException("The input other object must be a DataFrame or a Series");
+        if(is_array($other) || is_int($other) || is_string($other) || is_bool($other)) {
+            throw new InvalidArgumentException("The input other object must be a DataFrame or a Series, array given.");
+        }
+        if(!Util::isDataFrame($other) && !Util::isSeries($other)) {
+            throw new InvalidArgumentException("The input other object must be a DataFrame or a Series.");
         }
 
         if(Util::isSeries($other)) {
@@ -518,13 +520,12 @@ class DataFrame implements ArrayAccess, Iterator
         }
 
         if($ignore_index) {
-            $this->values = $this->values + $other->values;
-            $this->indices = $this->getIndices() + $other->getIndices();
+            $this->values = array_merge($this->values, $other->values);
+            $this->indices = array_merge($this->getIndices(), $other->getIndices());
             $this->updateShape();
             $this->updateIloc();
         }
         else {
-
             $same_indices = array_intersect($this->getIndices(), $other->getIndices());
             foreach ($same_indices as $same_index) {
                 // Replacing for all positions
@@ -536,13 +537,39 @@ class DataFrame implements ArrayAccess, Iterator
 
             $new_indices = array_diff($other->getIndices(), $this->getIndices());
             foreach ($new_indices as $new_index) {
-                $this->values[] = $other->iloc[$new_index];
+                $this->values[] = $other->iloc[$new_index]->getValues();
             }
 
-            $this->indices = $this->getIndices() + $new_indices;
+            $this->indices = array_merge($this->getIndices(), $new_indices);
             $this->updateShape();
             $this->updateIloc();
         }
 
+    }
+
+    /**
+     * Applies the input callable on the rows or columns of the DataFrame depending on the axis parameter.
+     * Axis 0 is the row and axis 1 is the column selector.
+     *
+     * @param $callable Callable function.
+     * @param int $axis The selected axis. axis=0 row, axis=1 col.
+     * @return array
+     */
+    public function apply($callable, $axis = 0) {
+        if(!is_callable($callable)) {
+            throw new InvalidArgumentException("Apply function's first parameter must be a callable.");
+        }
+        $result = [];
+        if($axis === 0) {
+            foreach ($this->iterrows() as $index => $row) {
+                $result[] = $callable(Series::fromRow($row, $index, array_keys($row)));
+            }
+        }
+        else {
+            foreach ($this->itercols() as $column_name => $col) {
+                $result[] = $callable(Series::fromColumn($col, $column_name, $this->getIndices()));
+            }
+        }
+        return $result;
     }
 }

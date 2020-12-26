@@ -59,17 +59,22 @@ class Series implements ArrayAccess, Iterator
     {
         // Presetting default values
         if($axis == Series::ROW_DATA && $columns == null) {
-            $columns = range(0, count($data) - 1);
+            if(count($data) < 1) {
+                $columns = [];
+            }
+            else {
+                $columns = range(0, count($data) - 1);
+            }
         }
         if($axis == Series::ROW_DATA && $indices == null) {
-            $indices = ["unknown"];
+            $indices = [];
         }
 
         if($axis == Series::COLUMN_DATA && $indices == null) {
-            $columns = range(0, count($data) - 1);
+            $indices = range(0, count($data) - 1);
         }
         if($axis == Series::COLUMN_DATA && $columns == null) {
-            $indices = ["unknown"];
+            $indices = [];
         }
 
 
@@ -104,13 +109,30 @@ class Series implements ArrayAccess, Iterator
         return isset($this->data[$idx]);
     }
 
+    private static function getOffsetValue($needle, $haystack) {
+        if(is_string($needle)) {
+            $idx = array_search($needle, $haystack);
+            if($idx === false) {
+                throw new InvalidArgumentException("Unknown offset: " . $needle);
+            }
+            return $idx;
+        }
+        elseif (is_int($needle)) {
+            return $needle;
+        }
+        else {
+            throw new InvalidArgumentException("Unknown index type.");
+        }
+
+    }
+
     public function offsetGet($offset)
     {
         if($this->axis == Series::ROW_DATA) {
-            $idx = array_search($offset, $this->columns);
+            $idx = self::getOffsetValue($offset, $this->columns);
         }
         else {
-            $idx = array_search($offset, $this->indices);
+            $idx = self::getOffsetValue($offset, $this->indices);
         }
         return $this->data[$idx];
     }
@@ -135,7 +157,7 @@ class Series implements ArrayAccess, Iterator
     }
 
     public static function fromArray(array $data) {
-        return new Series(array_values($data), 0);
+        return new Series(array_values($data), Series::ROW_DATA);
     }
 
     public static function fromColumn(array $data, $column_name, $indices) {
@@ -165,7 +187,13 @@ class Series implements ArrayAccess, Iterator
         $len = count($this->data);
         if($this->axis == Series::ROW_DATA) {
             $data_str = self::__getDataStr($this->columns, $this->data);
-            return "Series(Index=".$this->indices[0].", Length=".$len."){[\n$data_str]}";
+            if(count($this->indices) < 1) {
+                $index = "null";
+            }
+            else {
+                $index = $this->indices[0];
+            }
+            return "Series(Index=".$index.", Length=".$len."){[\n$data_str]}";
         }
         else {
             $data_str = self::__getDataStr($this->indices, $this->data);
@@ -184,7 +212,18 @@ class Series implements ArrayAccess, Iterator
     }
 
     public function getName() {
-        return $this->axis == Series::ROW_DATA ? $this->indices[0] : $this->columns[0];
+        if($this->axis == Series::ROW_DATA) {
+            if(count($this->indices) < 1) {
+                return null;
+            }
+            return  $this->indices[0];
+        }
+        else {
+            if(count($this->columns) < 1) {
+                return null;
+            }
+            return  $this->columns[0];
+        }
     }
 
     /**
