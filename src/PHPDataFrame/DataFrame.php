@@ -52,9 +52,6 @@ function truncate($string, $length, $dots = "...") {
 }
 
 /**
- * TODO list:
- *  - getter for name and indices in series (required test cases)
- *  - apply method for using arbitrary function
  * Class DataFrame
  * @package PHPDataFrame
  */
@@ -235,6 +232,9 @@ class DataFrame implements ArrayAccess, Iterator
                 throw new InvalidArgumentException("The length of DataFrame and the length of new column are 
                 not equal: " . count($value) . "!=" . count($this->values));
             }
+            if(Util::isAssocArray($value)) {
+                $value = array_values($value);
+            }
         }
         else {
             $a_val = $value;
@@ -242,7 +242,7 @@ class DataFrame implements ArrayAccess, Iterator
         }
 
         for ($i = 0; $i < count($this->values); $i++) {
-            $this->values[$offset] = $value[$i];
+            $this->values[$i][$offset] = $value[$i];
         }
         $this->columns[] = $offset;
 
@@ -562,12 +562,12 @@ class DataFrame implements ArrayAccess, Iterator
         $result = [];
         if($axis === 0) {
             foreach ($this->iterrows() as $index => $row) {
-                $result[] = $callable(Series::fromRow($row, $index, array_keys($row)));
+                $result[$index] = $callable($row);
             }
         }
         else {
             foreach ($this->itercols() as $column_name => $col) {
-                $result[] = $callable(Series::fromColumn($col, $column_name, $this->getIndices()));
+                $result[$column_name] = $callable($col);
             }
         }
         return $result;

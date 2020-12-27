@@ -86,4 +86,16 @@ class Util
 
         return $x === $y;
     }
+
+    /**
+     * Returns true if the input array is an associative array.
+     *
+     * @param array $arr
+     * @return bool
+     */
+    public static function isAssocArray($arr)
+    {
+        if (array() === $arr) return false;
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
 }
