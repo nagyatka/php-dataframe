@@ -3,7 +3,6 @@
 
 namespace PHPDataFrame;
 
-
 use PDO;
 use PhpOffice\PhpSpreadsheet\Exception;
 use PhpOffice\PhpSpreadsheet\Reader\Csv;
@@ -16,8 +15,8 @@ class PD
     /**
      * Loads the content of the csv file in a DataFrame object.
      *
-     * @param string $filepath_or_buffer Path to csv file
-     * @param string $sep Value separator in the csv file
+     * @param string $filepath_or_buffer Path to csv file.
+     * @param string $sep Value separator in the csv file.
      * @param array|null $header_names Array of column names.
      * @param int|bool $index_col Number of the index column. Set to false if the csv file does not contain index column.
      * @return DataFrame
@@ -31,9 +30,11 @@ class PD
     }
 
     /**
-     * @param $filepath_or_buffer
-     * @param array|null $header_names
-     * @param int|bool $index_col
+     * Loads the content of the xls file in a DataFrame object.
+     *
+     * @param string $filepath_or_buffer Path to xls file.
+     * @param array|null $header_names Array of column names.
+     * @param int|bool $index_col Number of the index column. Set to false if the csv file does not contain index column.
      * @return DataFrame
      * @throws Exception
      */
@@ -43,9 +44,11 @@ class PD
     }
 
     /**
+     * Loads the content of the xlsx file in a DataFrame object.
+     *
      * @param $filepath_or_buffer
      * @param array|null $header_names
-     * @param int|bool $index_col
+     * @param int|bool $index_col Number of the index column. Set to false if the csv file does not contain index column.
      * @return DataFrame
      * @throws Exception
      */
@@ -59,7 +62,7 @@ class PD
      * @param PDO $pdo
      * @param array $parameters
      * @param array|null $header_names
-     * @param int|bool $index_col
+     * @param int|bool $index_col Number of the index column. Set to false if the csv file does not contain index column.
      * @return DataFrame
      */
     public static function read_sql($sql, $pdo, $parameters = [], $header_names=null, $index_col=false) {
@@ -88,7 +91,7 @@ class PD
      *
      * @param Spreadsheet $objWorksheet
      * @param array|null $header_names
-     * @param int|bool $index_col
+     * @param int|bool $index_col Number of the index column. Set to false if the csv file does not contain index column.
      * @return DataFrame
      * @throws Exception
      */
@@ -129,5 +132,78 @@ class PD
             }
         }
         return new DataFrame($data, $columns, $indices);
+    }
+
+    /**
+     * @param DataFrame $df
+     * @param string $mode
+     * @param null $path_to_file
+     * @param bool $index
+     * @param bool $header
+     * @param string $sheet_name
+     * @param array $styles
+     * @param array $formats
+     * @param string $sep
+     * @return bool|string
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
+    public static function df_to_file($df, $mode, $path_to_file=null, $index=true, $header=true,
+                                      $sheet_name=null, $styles=[], $formats=[], $sep=",") {
+        $xlsArray = $df->values;
+
+        if($index) {
+            $columns = array_merge(["idx"], $df->getColumnNames());
+            $indices = $df->getIndices();
+            for($i = 0; $i < count($xlsArray); $i++) {
+                $xlsArray[$i] = array_merge(["idx" => $indices[0]], $xlsArray[$i]);
+            }
+        }
+        else {
+            $columns = $df->getColumnNames();
+        }
+
+        if($header) {
+            array_unshift($xlsArray, $columns);
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $worksheet = $spreadsheet->getActiveSheet();
+        $worksheet->setTitle($sheet_name == '' ? 'Sheet 1' : $sheet_name);
+
+        $worksheet->fromArray($xlsArray);
+
+        foreach ($styles as $selectedCells => $styleFormatArray) {
+            $worksheet->getStyle($selectedCells)->applyFromArray($styleFormatArray);
+        }
+
+        foreach ($formats as $selectedCells => $formatCode) {
+            $worksheet->getStyle($selectedCells)->getNumberFormat()->setFormatCode($formatCode);
+        }
+
+        switch ($mode) {
+            case "xls":
+                $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+                break;
+            case "xlsx":
+                $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+                break;
+            case "csv":
+                $writer = new \PhpOffice\PhpSpreadsheet\Writer\Csv($spreadsheet);
+                $writer->setSheetIndex(0);
+                $writer->setDelimiter($sep);
+                break;
+            default:
+                throw new \InvalidArgumentException("Unknown mode: " . $mode);
+        }
+        if($path_to_file == null) {
+            ob_start();
+            $writer->save('php://output');
+            $output = ob_get_clean();
+            return $output;
+        }
+        else {
+            $writer->save($path_to_file);
+            return true;
+        }
     }
 }

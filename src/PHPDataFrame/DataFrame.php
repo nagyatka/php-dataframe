@@ -9,6 +9,7 @@ use ArrayAccess;
 use InvalidArgumentException;
 use Iterator;
 use PHPDataFrame\Exception\UnsupportedOperationException;
+use PhpOffice\PhpSpreadsheet\Writer\Exception;
 use function PHPSTORM_META\type;
 
 /**
@@ -571,5 +572,49 @@ class DataFrame implements ArrayAccess, Iterator
             }
         }
         return $result;
+    }
+
+    /**
+     * Writes the DataFrame object to a csv file.
+     *
+     * @param string|null $path_to_file Destination file path. If it is null, it returns with the file content as a string.
+     * @param bool $index If it is true, the index column is attached as the first column. Default: true
+     * @param bool $header If it is true, it writes the column names. Default: true
+     * @param string $sep Separator character.
+     * @return bool|string
+     * @throws Exception
+     */
+    public function to_csv($path_to_file=null, $index=true, $header=true, $sep=",") {
+        return PD::df_to_file($this, "csv", $path_to_file, $index, $header, null, [], [], $sep);
+    }
+
+    /**
+     * Writes the DataFrame object to a xls file.
+     *
+     * @param string|null $path_to_file Destination file path. If it is null, it returns with the file content as a string.
+     * @param bool $index If it is true, the index column is attached as the first column. Default: true
+     * @param bool $header If it is true, it writes the column names. Default: true
+     * @param string $sheet_name Name of the sheet. Default: null
+     * @param array $styles Styling array. Default: []; help: https://phpspreadsheet.readthedocs.io/en/latest/topics/recipes/#styles
+     * @param array $formats Number formatting settings. Default: []; https://phpspreadsheet.readthedocs.io/en/latest/topics/recipes/#styles
+     * @throws Exception
+     */
+    public function to_xls($path_to_file=null, $index=true, $header=true, $sheet_name=null, $styles=[], $formats=[]) {
+        PD::df_to_file($this, "xls", $path_to_file, $index, $header, $sheet_name, $styles, $formats);
+    }
+
+    /**
+     * Writes the DataFrame object to a xlsx file.
+     *
+     * @param string|null $path_to_file Destination file path. If it is null, it returns with the file content as a string.
+     * @param bool $index If it is true, the index column is attached as the first column. Default: true
+     * @param bool $header If it is true, it writes the column names. Default: true
+     * @param string $sheet_name Name of the sheet. Default: null
+     * @param array $styles Styling array. Default: []; help: https://phpspreadsheet.readthedocs.io/en/latest/topics/recipes/#styles
+     * @param array $formats Number formatting settings. Default: []; https://phpspreadsheet.readthedocs.io/en/latest/topics/recipes/#styles
+     * @throws Exception
+     */
+    public function to_xlsx($path_to_file=null, $index=true, $header=true, $sheet_name=null, $styles=[], $formats=[]) {
+        PD::df_to_file($this, "xlsx", $path_to_file, $index, $header, $sheet_name, $styles, $formats);
     }
 }
