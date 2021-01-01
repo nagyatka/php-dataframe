@@ -1,7 +1,8 @@
 {
     "name": "nagyatka/php-dataframe",
     "type": "library",
-    "description": "php library for table editing",
+    "license": "MIT",
+    "description": "library for table editing",
     "authors": [
         {
             "name": "Attila Nagy",
