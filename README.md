@@ -200,6 +200,50 @@ Series(Index=e, Length=3){[
 	c: 2,
 ]}
 ```
+Of course, numeric indices can be used as well.
+```php
+>>> $df = new DataFrame([[0,1,2], [3,4,5]], ["a", "b", "c"], ["e", "f"]);
+>>> print($df->iloc[0]);
+
+Series(Index=0, Length=3){[
+	a: 0,
+	b: 1,
+	c: 2,
+]}
+```
 
 
+#### Selecting multiple rows of a DataFrame
+Because php does not support array object as key, the `inds` helper function needs to be used to select multi columns.
+```php
+>>> $df = new DataFrame([[0,1,2], [3,4,5], [6,7,8]], ["a", "b", "c"], ["e", "f", "g"]);
+>>> print($df->iloc[\PHPDataFrame\inds(["g","f"])]);
 
+     |a         |b         |c         |
+=======================================
+g    |6         |7         |8         |
+f    |3         |4         |5         |
+Shape: 2x3
+
+>>> print($df->iloc[\PHPDataFrame\inds([0,1])]);
+
+     |a         |b         |c         |
+=======================================
+e    |0         |1         |2         |
+f    |3         |4         |5         |
+Shape: 2x3
+
+```
+
+Since the index values don't have to be unique, an `iloc` operation with a label index can results in multiple rows.
+
+```php
+>>> $df = new DataFrame([[0,1,2], [3,4,5], [6,7,8]], ["a", "b", "c"], ["e", "f", "e"]);
+>>> print($df->iloc["e"]);
+
+     |a         |b         |c         |
+=======================================
+e    |0         |1         |2         |
+e    |6         |7         |8         |
+Shape: 2x3
+```
