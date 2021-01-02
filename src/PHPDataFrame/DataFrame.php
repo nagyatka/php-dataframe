@@ -192,8 +192,8 @@ class DataFrame implements ArrayAccess, Iterator
     {
         if(is_cols_str($offset)) {
             $columns = get_cols($offset);
-            if(is_int($columns[0])) {
-                return $this->getColumns(array_map(function ($x) {return intval($x);}, $columns));
+            if(is_numeric($columns[0])) {
+                return $this->getColumns(array_map(function ($x) {return $this->columns[intval($x)];}, $columns));
             }
             else {
                 return $this->getColumns($columns);
@@ -302,9 +302,21 @@ class DataFrame implements ArrayAccess, Iterator
     /**
      * @return array
      */
-    public function getIndices(): array
+    public function getIndices()
     {
         return $this->indices;
+    }
+
+    /**
+     * @param array $indices
+     */
+    public function setIndices($indices) {
+        if(count($indices) != count($this->indices)) {
+            throw new InvalidArgumentException("Length of index array is wrong. ". count($indices).
+                "!=".count($this->indices));
+        }
+        $this->indices = $indices;
+        $this->updateIloc();
     }
 
     /**
@@ -321,10 +333,10 @@ class DataFrame implements ArrayAccess, Iterator
      *
      * @param array $columns
      */
-    public function setColumnNames(array $columns): void
+    public function setColumnNames(array $columns)
     {
         if(count($columns) != count($this->columns)) {
-            throw new InvalidArgumentException("Length of column names array is worng. ". count($columns).
+            throw new InvalidArgumentException("Length of column names array is wrong. ". count($columns).
                 "!=".count($this->columns));
         }
         $this->columns = $columns;

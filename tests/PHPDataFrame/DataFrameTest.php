@@ -132,6 +132,24 @@ class DataFrameTest extends TestCase
 
         $this->assertTrue($sub_df->values[0] === ["a" => 1, "b" => 2]);
         $this->assertTrue($sub_df->values[1] === ["a" => 4, "b" => 5]);
+    }
 
+    public function testOffsetGetMoreIndexElements() {
+        $df = new DataFrame([
+            [1,2,3],
+            [4,5,6]
+        ], ["a", "b", "c"], ["e", "f"]);
+
+        /** @var Series $col */
+        $sub_df = $df[cols([0,1])];
+        $this->assertTrue(Util::isDataFrame($sub_df));
+
+        $this->assertEquals(2, $sub_df->shape[0]);
+        $this->assertEquals(2, $sub_df->shape[1]);
+        $this->assertTrue($sub_df->getIndices() === ["e", "f"]);
+        $this->assertTrue($sub_df->getColumnNames() === ["a", "b"]);
+
+        $this->assertTrue($sub_df->values[0] === ["a" => 1, "b" => 2]);
+        $this->assertTrue($sub_df->values[1] === ["a" => 4, "b" => 5]);
     }
 }
